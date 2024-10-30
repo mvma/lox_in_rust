@@ -1,3 +1,6 @@
+mod scanner;
+use crate::scanner::*;
+
 use std::env;
 use std::fs;
 use std::io;
@@ -25,7 +28,13 @@ fn run_file(s: &str) {
 }
 
 fn run(s: &str) {
-    dbg!(s);
+    let scanner = Scanner::new(s);
+
+    let tokens = scanner.scan_tokens();
+
+    for token in tokens {
+        dbg!(&token);
+    }
 }
 
 fn rum_prompt() {
@@ -37,6 +46,8 @@ fn rum_prompt() {
         io::stdin()
             .read_line(&mut line)
             .expect("Could not read the line");
+
+        let line = line.trim();
 
         if line.is_empty() {
             break;
