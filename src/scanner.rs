@@ -1,15 +1,51 @@
 use std::fmt;
 
-pub struct Scanner {}
+pub struct Scanner<'a> {
+    source: &'a str,
+    tokens: Vec<Token>,
+    start: usize,
+    current: usize,
+    line: u32,
+}
 
-impl Scanner {
-    pub fn new(_s: &str) -> Self {
-        Self {}
+impl<'a> Scanner<'a> {
+    pub fn new(s: &'a str) -> Self {
+        Self {
+            source: s,
+            tokens: vec![],
+            start: 0,
+            current: 0,
+            line: 1,
+        }
     }
 
-    pub fn scan_tokens(&self) -> Vec<Token> {
-        todo!()
+    pub fn scan_tokens(&mut self) -> Vec<Token> {
+        while !self.is_at_end() {
+            self.start = self.current;
+        }
+
+        self.tokens.push(Token::new(
+            TokenType::Eof,
+            String::new(),
+            Literal::Nil,
+            self.line,
+        ));
+
+        return vec![];
     }
+
+    fn is_at_end(&self) -> bool {
+        return self.current >= self.source.len();
+    }
+
+    fn scan_token(&self) {}
+
+    fn advance(&mut self) -> &str {
+        self.current += 1;
+        return &self.source[self.current - 1..self.current];
+    }
+
+    fn add_token(&self, token_type: TokenType, literal: Literal) {}
 }
 
 #[derive(Debug)]
