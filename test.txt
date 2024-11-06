@@ -1,1 +1,6 @@
-hello rust, that is my first lox interpreter
+">= <= 
++-/*
+;
+//end of file"
+1+2==3
+~

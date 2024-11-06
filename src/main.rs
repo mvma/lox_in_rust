@@ -17,7 +17,7 @@ fn main() {
     } else if args.len() == TOTAL_ARGS_EXPECTED {
         run_file(&args[1]);
     } else {
-        rum_prompt();
+        run_prompt();
     }
 }
 
@@ -28,7 +28,7 @@ fn run_file(s: &str) {
 }
 
 fn run(s: &str) {
-    let scanner = Scanner::new(s);
+    let mut scanner = Scanner::new(s);
 
     let tokens = scanner.scan_tokens();
 
@@ -37,7 +37,7 @@ fn run(s: &str) {
     }
 }
 
-fn rum_prompt() {
+fn run_prompt() {
     loop {
         println!("> ");
 
