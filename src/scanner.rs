@@ -1,5 +1,38 @@
 use core::f64;
+use std::collections::HashMap;
+use std::sync::OnceLock;
 use std::{fmt, str};
+
+// A static, lazily-initialized, thread-safe HashMap that maps keyword strings to token types.
+// `OnceLock` ensures that the HashMap is initialized only once, the first time it is accessed,
+// making it ideal for a global, read-only reference. This allows efficient and safe access to
+// a shared set of keywords used throughout the program.
+static KEY_WORDS: OnceLock<HashMap<&'static str, TokenType>> = OnceLock::new();
+
+fn get_key_words() -> &'static HashMap<&'static str, TokenType> {
+    KEY_WORDS.get_or_init(|| {
+        let mut map = HashMap::new();
+
+        map.insert("and", TokenType::And);
+        map.insert("class", TokenType::Class);
+        map.insert("else", TokenType::Else);
+        map.insert("false", TokenType::False);
+        map.insert("for", TokenType::For);
+        map.insert("fun", TokenType::Fun);
+        map.insert("if", TokenType::If);
+        map.insert("nil", TokenType::Nil);
+        map.insert("or", TokenType::Or);
+        map.insert("print", TokenType::Print);
+        map.insert("return", TokenType::Return);
+        map.insert("super", TokenType::Super);
+        map.insert("this", TokenType::This);
+        map.insert("true", TokenType::True);
+        map.insert("var", TokenType::Var);
+        map.insert("while", TokenType::While);
+
+        map
+    })
+}
 
 pub struct Scanner<'a> {
     source: &'a str,
@@ -7,6 +40,18 @@ pub struct Scanner<'a> {
     start: usize,
     current: usize,
     line: u32,
+}
+
+fn is_alpha(s: &str) -> bool {
+    (s >= "a" && s <= "z") || (s >= "A" && s <= "Z") || s == "_"
+}
+
+fn is_digit(s: &str) -> bool {
+    s >= "0" && s <= "9"
+}
+
+fn is_alpha_numeric(s: &str) -> bool {
+    is_alpha(s) || is_digit(s)
 }
 
 impl<'a> Scanner<'a> {
@@ -104,11 +149,14 @@ impl<'a> Scanner<'a> {
             "\"" => {
                 self.string();
             }
-            "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" => {
-                self.number();
-            }
             _ => {
-                panic!("Unrecognized token at line {}", self.line);
+                if is_digit(s) {
+                    self.number();
+                } else if is_alpha(s) {
+                    self.identifier();
+                } else {
+                    panic!("Unrecognized token at line {}", self.line);
+                }
             }
         };
     }
@@ -162,10 +210,6 @@ impl<'a> Scanner<'a> {
         &self.source[self.current + 1..self.current + 2]
     }
 
-    fn is_digit(&self, s: &str) -> bool {
-        s >= "0" && s <= "9"
-    }
-
     fn string(&mut self) {
         while self.peek() != "\"" && !self.is_at_end() {
             if self.peek() == "\n" {
@@ -179,7 +223,6 @@ impl<'a> Scanner<'a> {
             panic!("Unterminated string at {}", self.line);
         }
 
-        // Move to the closing ""
         self.advance();
 
         let content: &str = &self.source[self.start + 1..self.current];
@@ -188,14 +231,14 @@ impl<'a> Scanner<'a> {
     }
 
     fn number(&mut self) {
-        while self.is_digit(self.peek()) {
+        while is_digit(self.peek()) {
             self.advance();
         }
 
-        if self.peek() == "." && self.is_digit(self.peek_next()) {
+        if self.peek() == "." && is_digit(self.peek_next()) {
             self.advance();
 
-            while self.is_digit(self.peek()) {
+            while is_digit(self.peek()) {
                 self.advance();
             }
         }
@@ -206,6 +249,25 @@ impl<'a> Scanner<'a> {
             TokenType::Number,
             Literal::Number(content.parse::<f64>().unwrap()),
         );
+    }
+
+    fn identifier(&mut self) {
+        while is_alpha_numeric(self.peek()) {
+            self.advance();
+        }
+
+        let content: &str = &self.source[self.start..self.current];
+
+        // Attempt to retrieve the token type for the current identifier from the static keyword map.
+        // If the identifier matches a keyword, get its corresponding TokenType. Otherwise, default
+        // to TokenType::Identifier, treating it as a user-defined identifier. `cloned()` is used to
+        // obtain an owned TokenType since `get` returns a reference.
+        let key_words = get_key_words()
+            .get(content)
+            .cloned()
+            .unwrap_or(TokenType::Identifier);
+
+        self.add_token(key_words, Literal::Nil);
     }
 }
 
@@ -234,27 +296,14 @@ impl fmt::Display for Token {
     }
 }
 
-impl fmt::Display for TokenType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-impl fmt::Display for Literal {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
 #[derive(Debug)]
 pub enum Literal {
     Number(f64),
     Text(String),
-    Bool(bool),
     Nil,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TokenType {
     LeftParen,
     RightParen,

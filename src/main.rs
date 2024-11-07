@@ -33,7 +33,7 @@ fn run(s: &str) {
     let tokens = scanner.scan_tokens();
 
     for token in tokens {
-        dbg!(&token);
+        println!("{:?}", token);
     }
 }
 
