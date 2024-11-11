@@ -1,5 +1,7 @@
 mod scanner;
 use crate::scanner::*;
+mod parser;
+use crate::parser::*;
 
 use std::env;
 use std::fs;
@@ -32,9 +34,8 @@ fn run(s: &str) {
 
     let tokens = scanner.scan_tokens();
 
-    for token in tokens {
-        println!("{:?}", token);
-    }
+    let mut parser = Parser::new(tokens.to_vec());
+    parser.expression();
 }
 
 fn run_prompt() {
@@ -54,5 +55,27 @@ fn run_prompt() {
         }
 
         run(&line);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn it_parses() {
+        use crate::scanner::{Literal, Token, TokenType};
+
+        let tokens = vec![
+            Token::new(TokenType::Number, "2".to_string(), Literal::Number(2.0), 1),
+            Token::new(TokenType::Plus, "+".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Number, "2".to_string(), Literal::Number(2.0), 1),
+            Token::new(TokenType::Eof, "".to_string(), Literal::Nil, 1), // Important: Include EOF
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expression = parser.expression();
+
+        assert_eq!(expression.to_string(), "(+ 2 2)");
     }
 }

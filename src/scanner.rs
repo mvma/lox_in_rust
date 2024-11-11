@@ -1,7 +1,7 @@
 use core::f64;
 use std::collections::HashMap;
+use std::str;
 use std::sync::OnceLock;
-use std::{fmt, str};
 
 // A static, lazily-initialized, thread-safe HashMap that maps keyword strings to token types.
 // `OnceLock` ensures that the HashMap is initialized only once, the first time it is accessed,
@@ -65,7 +65,7 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    pub fn scan_tokens(&mut self) -> Vec<Token> {
+    pub fn scan_tokens(&mut self) -> &Vec<Token> {
         while !self.is_at_end() {
             self.start = self.current;
 
@@ -79,7 +79,7 @@ impl<'a> Scanner<'a> {
             self.line,
         ));
 
-        return vec![];
+        return &self.tokens;
     }
 
     fn scan_token(&mut self) {
@@ -134,7 +134,7 @@ impl<'a> Scanner<'a> {
             }
             "/" => {
                 if self.match_next("/") {
-                    // A comment goes until the end of the line
+                    // A comment goes until the end of the line.
                     while self.peek() != "\0" {
                         self.advance();
                     }
@@ -174,8 +174,6 @@ impl<'a> Scanner<'a> {
         let lexeme = &self.source[self.start..self.current];
 
         let token = Token::new(token_type, lexeme.to_string(), literal, self.line);
-
-        println!("{}", token);
 
         self.tokens.push(token);
     }
@@ -271,7 +269,7 @@ impl<'a> Scanner<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct Token {
     token_type: TokenType,
     lexeme: String,
@@ -288,22 +286,57 @@ impl Token {
             line: (line),
         }
     }
-}
 
-impl fmt::Display for Token {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+    pub fn lexeme(&self) -> &str {
+        match self.token_type {
+            TokenType::Plus => "+",
+            TokenType::Minus => "-",
+            TokenType::Star => "*",
+            TokenType::Slash => "/",
+            TokenType::Bang => "!",
+            TokenType::EqualEqual => "==",
+            TokenType::BangEqual => "!=",
+            TokenType::Greater => ">",
+            TokenType::GreaterEqual => ">=",
+            TokenType::Less => "<",
+            TokenType::LessEqual => "<=",
+            _ => "",
+        }
+    }
+
+    pub fn is_eof(&self) -> bool {
+        self.token_type == TokenType::Eof
+    }
+
+    pub fn type_equals_to(&self, token_type: &TokenType) -> bool {
+        &self.token_type == token_type
+    }
+
+    pub fn get_literal(&self) -> &Literal {
+        &self.literal
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone)]
 pub enum Literal {
     Number(f64),
     Text(String),
     Nil,
+    Boolean(bool),
 }
 
-#[derive(Debug, Clone)]
+impl Literal {
+    pub fn to_string(&self) -> String {
+        match self {
+            Literal::Boolean(b) => b.to_string(),
+            Literal::Nil => "nil".to_string(),
+            Literal::Number(n) => n.to_string(),
+            Literal::Text(s) => s.clone(),
+        }
+    }
+}
+
+#[derive(Clone, PartialEq)]
 pub enum TokenType {
     LeftParen,
     RightParen,
