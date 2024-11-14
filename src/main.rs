@@ -35,7 +35,7 @@ fn run(s: &str) {
     let tokens = scanner.scan_tokens();
 
     let mut parser = Parser::new(tokens.to_vec());
-    println!("{}", parser.expression().to_custom_string());
+    println!("{}", parser.parse().to_custom_string());
 }
 
 fn run_prompt() {
@@ -74,7 +74,7 @@ mod tests {
         ];
 
         let mut parser = Parser::new(tokens);
-        let expression = parser.expression();
+        let expression = parser.parse();
 
         assert_eq!(expression.to_custom_string(), "(+ 2 2)");
     }
@@ -93,7 +93,7 @@ mod tests {
         ];
 
         let mut parser = Parser::new(tokens);
-        let expression = parser.expression();
+        let expression = parser.parse();
 
         assert_eq!(expression.to_custom_string(), "(+ 1 (* 2 3))");
     }
@@ -114,7 +114,7 @@ mod tests {
         ];
 
         let mut parser = Parser::new(tokens);
-        let expression = parser.expression();
+        let expression = parser.parse();
 
         assert_eq!(expression.to_custom_string(), "(* (group (+ 1 2)) 3)");
     }
@@ -135,6 +135,22 @@ mod tests {
         ];
 
         let mut parser = Parser::new(tokens);
-        parser.expression();
+        parser.parse();
+    }
+
+    #[test]
+    #[should_panic]
+    fn it_should_panic_accentuation() {
+        let mut scanner = Scanner::new("print \"é\"");
+        scanner.scan_tokens();
+    }
+
+    #[test]
+    fn it_should_tokenize() {
+        let mut scanner = Scanner::new("print \"e\"");
+        let tokens = scanner.scan_tokens().to_vec();
+
+        assert_eq!(tokens[0].type_equals_to(&TokenType::Print), true);
+        assert_eq!(tokens[1].type_equals_to(&TokenType::String), true);
     }
 }

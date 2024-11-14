@@ -1,5 +1,3 @@
-use std::string;
-
 use crate::scanner::*;
 
 pub enum Expression {
@@ -58,6 +56,10 @@ impl Parser {
         Self { tokens, current: 0 }
     }
 
+    pub fn parse(&mut self) -> Expression {
+        self.expression()
+    }
+
     // expression     → ...
     // equality       → ...
     // comparison     → ...
@@ -65,7 +67,7 @@ impl Parser {
     // factor         → ...
     // unary          → ...
     // primary        → ...
-    pub fn expression(&mut self) -> Expression {
+    fn expression(&mut self) -> Expression {
         self.equality()
     }
 

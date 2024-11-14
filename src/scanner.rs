@@ -1,6 +1,5 @@
 use core::f64;
 use std::collections::HashMap;
-use std::str;
 use std::sync::OnceLock;
 
 // A static, lazily-initialized, thread-safe HashMap that maps keyword strings to token types.
@@ -142,7 +141,8 @@ impl<'a> Scanner<'a> {
                     self.add_token(TokenType::Slash, Literal::Nil);
                 }
             }
-            " " | "\r" | "\t" | "\n" => {
+            " " => return,
+            "\r" | "\t" | "\n" => {
                 self.line += 1;
                 return;
             }
@@ -198,6 +198,7 @@ impl<'a> Scanner<'a> {
         if self.is_at_end() {
             return "\0";
         }
+
         &self.source[self.current..self.current + 1]
     }
 
@@ -268,6 +269,7 @@ impl<'a> Scanner<'a> {
         self.add_token(key_words, Literal::Nil);
     }
 }
+
 
 #[derive(Clone)]
 pub struct Token {
