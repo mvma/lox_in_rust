@@ -1,3 +1,5 @@
+use std::string;
+
 use crate::scanner::*;
 
 pub enum Expression {
@@ -19,9 +21,11 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn to_string(&self) -> String {
+    pub fn to_custom_string(&self) -> String {
         match self {
-            Expression::Grouping { expression } => format!("(group {})", expression.to_string()),
+            Expression::Grouping { expression } => {
+                format!("(group {})", expression.to_custom_string())
+            }
             Expression::Binary {
                 left,
                 operator,
@@ -30,14 +34,16 @@ impl Expression {
                 format!(
                     "({} {} {})",
                     operator.lexeme(),
-                    left.to_string(),
-                    right.to_string()
+                    left.to_custom_string(),
+                    right.to_custom_string()
                 )
             }
             Expression::Unary { operator, right } => {
-                format!("({} {})", operator.lexeme(), right.to_string())
+                format!("({} {})", operator.lexeme(), right.to_custom_string())
             }
-            Expression::Literal { literal_value } => format!("{}", literal_value.to_string()),
+            Expression::Literal { literal_value } => {
+                format!("{}", literal_value.to_custom_string())
+            }
         }
     }
 }
@@ -182,6 +188,19 @@ impl Parser {
             };
         }
 
+        if self.match_any(&[TokenType::LeftParen]) {
+            let expression = self.expression();
+
+            self.consume(
+                &TokenType::RightParen,
+                "Expect ')' after expression.".to_string(),
+            );
+
+            return Expression::Grouping {
+                expression: Box::new(expression),
+            };
+        }
+
         panic!("Invalid syntax")
     }
 
@@ -220,17 +239,18 @@ impl Parser {
         current.is_eof()
     }
 
-    fn get_literal(&self) -> &Literal {
-        let current = self.peek();
-
-        current.get_literal()
-    }
-
     fn peek(&self) -> &Token {
         &self.tokens[self.current]
     }
 
     fn previous(&self) -> &Token {
         &self.tokens[self.current - 1]
+    }
+
+    fn consume(&mut self, token_type: &TokenType, message: String) -> &Token {
+        if self.check(token_type) {
+            return &self.advance();
+        }
+        panic!("{}", message);
     }
 }

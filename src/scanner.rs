@@ -326,7 +326,7 @@ pub enum Literal {
 }
 
 impl Literal {
-    pub fn to_string(&self) -> String {
+    pub fn to_custom_string(&self) -> String {
         match self {
             Literal::Boolean(b) => b.to_string(),
             Literal::Nil => "nil".to_string(),

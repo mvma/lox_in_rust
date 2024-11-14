@@ -35,7 +35,7 @@ fn run(s: &str) {
     let tokens = scanner.scan_tokens();
 
     let mut parser = Parser::new(tokens.to_vec());
-    parser.expression();
+    println!("{}", parser.expression().to_custom_string());
 }
 
 fn run_prompt() {
@@ -63,19 +63,78 @@ mod tests {
     use super::*;
 
     #[test]
-    fn it_parses() {
+    fn it_parses_add() {
         use crate::scanner::{Literal, Token, TokenType};
 
         let tokens = vec![
             Token::new(TokenType::Number, "2".to_string(), Literal::Number(2.0), 1),
             Token::new(TokenType::Plus, "+".to_string(), Literal::Nil, 1),
             Token::new(TokenType::Number, "2".to_string(), Literal::Number(2.0), 1),
-            Token::new(TokenType::Eof, "".to_string(), Literal::Nil, 1), // Important: Include EOF
+            Token::new(TokenType::Eof, "".to_string(), Literal::Nil, 1),
         ];
 
         let mut parser = Parser::new(tokens);
         let expression = parser.expression();
 
-        assert_eq!(expression.to_string(), "(+ 2 2)");
+        assert_eq!(expression.to_custom_string(), "(+ 2 2)");
+    }
+
+    #[test]
+    fn it_parses_with_precedence() {
+        use crate::scanner::{Literal, Token, TokenType};
+
+        let tokens = vec![
+            Token::new(TokenType::Number, "1".to_string(), Literal::Number(1.0), 1),
+            Token::new(TokenType::Plus, "+".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Number, "2".to_string(), Literal::Number(2.0), 1),
+            Token::new(TokenType::Star, "*".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Number, "3".to_string(), Literal::Number(3.0), 1),
+            Token::new(TokenType::Eof, "".to_string(), Literal::Nil, 1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expression = parser.expression();
+
+        assert_eq!(expression.to_custom_string(), "(+ 1 (* 2 3))");
+    }
+
+    #[test]
+    fn it_parses_with_grouping() {
+        use crate::scanner::{Literal, Token, TokenType};
+
+        let tokens = vec![
+            Token::new(TokenType::LeftParen, "(".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Number, "1".to_string(), Literal::Number(1.0), 1),
+            Token::new(TokenType::Plus, "+".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Number, "2".to_string(), Literal::Number(2.0), 1),
+            Token::new(TokenType::RightParen, ")".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Star, "*".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Number, "3".to_string(), Literal::Number(3.0), 1),
+            Token::new(TokenType::Eof, "".to_string(), Literal::Nil, 1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        let expression = parser.expression();
+
+        assert_eq!(expression.to_custom_string(), "(* (group (+ 1 2)) 3)");
+    }
+
+    #[test]
+    #[should_panic(expected = "Expect ')' after expression.")]
+    fn it_should_panic_missing_paren() {
+        use crate::scanner::{Literal, Token, TokenType};
+
+        let tokens = vec![
+            Token::new(TokenType::LeftParen, "(".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Number, "1".to_string(), Literal::Number(1.0), 1),
+            Token::new(TokenType::Plus, "+".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Number, "2".to_string(), Literal::Number(2.0), 1),
+            Token::new(TokenType::Star, "*".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Number, "3".to_string(), Literal::Number(3.0), 1),
+            Token::new(TokenType::Eof, "".to_string(), Literal::Nil, 1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        parser.expression();
     }
 }
