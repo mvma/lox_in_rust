@@ -153,4 +153,15 @@ mod tests {
         assert_eq!(tokens[0].type_equals_to(&TokenType::Print), true);
         assert_eq!(tokens[1].type_equals_to(&TokenType::String), true);
     }
+
+    #[test]
+    fn it_works() {
+        let tokens = vec![
+            Token::new(TokenType::Number, "1".to_string(), Literal::Number(1.0), 1),
+            Token::new(TokenType::Eof, "".to_string(), Literal::Nil, 1),
+        ];
+
+        let mut parser = Parser::new(tokens);
+        parser.parse().evaluate();
+    }
 }

@@ -270,7 +270,6 @@ impl<'a> Scanner<'a> {
     }
 }
 
-
 #[derive(Clone)]
 pub struct Token {
     token_type: TokenType,
@@ -316,6 +315,10 @@ impl Token {
 
     pub fn get_literal(&self) -> &Literal {
         &self.literal
+    }
+
+    pub fn get_token_type(&self) -> &TokenType {
+        &self.token_type
     }
 }
 

@@ -44,6 +44,34 @@ impl Expression {
             }
         }
     }
+
+    pub fn evaluate(&self) -> Literal {
+        match self {
+            Expression::Grouping { expression } => expression.evaluate(),
+            Expression::Literal { literal_value } => literal_value.clone(),
+            Expression::Unary { operator, right } => {
+                let right_expression = right.evaluate();
+
+                match (&right_expression, operator.get_token_type()) {
+                    (Literal::Number(literal_value), TokenType::Bang) => {
+                        Literal::Number(-literal_value)
+                    }
+                    (_, TokenType::Bang) => {
+                        panic!(
+                            "Invalid operator for {}",
+                            right_expression.to_custom_string()
+                        )
+                    }
+                    _ => {
+                        todo!()
+                    }
+                }
+            }
+            _ => {
+                todo!()
+            }
+        }
+    }
 }
 
 pub struct Parser {
