@@ -1,5 +1,6 @@
 use crate::scanner::*;
 
+#[derive(PartialEq)]
 pub enum Expression {
     Grouping {
         expression: Box<Expression>,
@@ -16,6 +17,17 @@ pub enum Expression {
     Literal {
         literal_value: Literal,
     },
+}
+
+impl Literal {
+    pub fn to_string(&self) -> String {
+        match self {
+            Literal::Number(value) => format!("{}", value),
+            Literal::Boolean(value) => format!("{}", value),
+            Literal::Text(value) => value.clone(),
+            Literal::Nil => "nil".to_string(),
+        }
+    }
 }
 
 impl Expression {
@@ -45,30 +57,88 @@ impl Expression {
         }
     }
 
+    pub fn evaluate_and_print(&self) {
+        let result = self.evaluate();
+        println!("{}", result.to_string());
+    }
+
     pub fn evaluate(&self) -> Literal {
         match self {
             Expression::Grouping { expression } => expression.evaluate(),
+            Expression::Binary {
+                left,
+                operator,
+                right,
+            } => self.evaluate_binary(left, operator, right),
+            Expression::Unary { operator, right } => self.evaluate_unary(operator, right),
             Expression::Literal { literal_value } => literal_value.clone(),
-            Expression::Unary { operator, right } => {
-                let right_expression = right.evaluate();
+        }
+    }
 
-                match (&right_expression, operator.get_token_type()) {
-                    (Literal::Number(literal_value), TokenType::Bang) => {
-                        Literal::Number(-literal_value)
-                    }
-                    (_, TokenType::Bang) => {
-                        panic!(
-                            "Invalid operator for {}",
-                            right_expression.to_custom_string()
-                        )
-                    }
-                    _ => {
-                        todo!()
-                    }
+    fn evaluate_binary(
+        &self,
+        left: &Box<Expression>,
+        token: &Token,
+        right: &Box<Expression>,
+    ) -> Literal {
+        let left_expression = left.evaluate();
+        let right_expression = right.evaluate();
+
+        match (&left_expression, token.get_token_type(), &right_expression) {
+            (Literal::Number(l), TokenType::Minus, Literal::Number(r)) => Literal::Number(l - r),
+            (Literal::Number(l), TokenType::Plus, Literal::Number(r)) => Literal::Number(l + r),
+            (Literal::Number(l), TokenType::Star, Literal::Number(r)) => Literal::Number(l * r),
+            (Literal::Number(l), TokenType::Slash, Literal::Number(r)) => {
+                if *r == 0.0 {
+                    panic!("Can't divide by zero");
                 }
+                Literal::Number(l / r)
             }
+            (Literal::Number(l), TokenType::Greater, Literal::Number(r)) => Literal::Boolean(l > r),
+            (Literal::Number(l), TokenType::GreaterEqual, Literal::Number(r)) => {
+                Literal::Boolean(l >= r)
+            }
+            (Literal::Number(l), TokenType::Less, Literal::Number(r)) => Literal::Boolean(l < r),
+            (Literal::Number(l), TokenType::LessEqual, Literal::Number(r)) => {
+                Literal::Boolean(l <= r)
+            }
+            (Literal::Text(l), TokenType::Plus, Literal::Text(r)) => {
+                println!("{}",l);
+                println!("{}",r);
+                Literal::Text(format!("{}{}", l, r))
+            }
+            (_, TokenType::EqualEqual, _) => {
+                Literal::Boolean(self.is_equal(left_expression, right_expression))
+            }
+            (_, TokenType::BangEqual, _) => {
+                Literal::Boolean(!self.is_equal(left_expression, right_expression))
+            }
+            _ => panic!(
+                "Unsupported binary operation: {} {} {}",
+                left_expression.to_custom_string(),
+                token.lexeme(),
+                right_expression.to_custom_string()
+            ),
+        }
+    }
+
+    fn evaluate_unary(&self, token: &Token, expression: &Box<Expression>) -> Literal {
+        let right_expression = expression.evaluate();
+
+        match (token.get_token_type(), right_expression) {
+            (TokenType::Minus, Literal::Number(value)) => return Literal::Number(-value),
+            _ => todo!(),
+        }
+    }
+
+    fn is_equal(&self, left: Literal, right: Literal) -> bool {
+        match (left, right) {
+            (Literal::Number(l), Literal::Number(r)) => l == r,
+            (Literal::Text(l), Literal::Text(r)) => l == r,
+            (Literal::Boolean(l), Literal::Boolean(r)) => l == r,
+            (Literal::Nil, Literal::Nil) => true,
             _ => {
-                todo!()
+                panic!("Can't compare 2 different types");
             }
         }
     }

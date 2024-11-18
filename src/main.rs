@@ -35,7 +35,7 @@ fn run(s: &str) {
     let tokens = scanner.scan_tokens();
 
     let mut parser = Parser::new(tokens.to_vec());
-    println!("{}", parser.parse().to_custom_string());
+    parser.parse().evaluate_and_print();
 }
 
 fn run_prompt() {

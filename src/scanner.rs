@@ -224,7 +224,7 @@ impl<'a> Scanner<'a> {
 
         self.advance();
 
-        let content: &str = &self.source[self.start + 1..self.current];
+        let content: &str = &self.source[self.start + 1..self.current-1];
 
         self.add_token(TokenType::String, Literal::Text(content.into()));
     }
@@ -270,7 +270,7 @@ impl<'a> Scanner<'a> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Token {
     token_type: TokenType,
     lexeme: String,
@@ -322,7 +322,7 @@ impl Token {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum Literal {
     Number(f64),
     Text(String),
