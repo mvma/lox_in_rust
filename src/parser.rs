@@ -19,6 +19,11 @@ pub enum Expression {
     },
 }
 
+pub enum Statement {
+    Expression { expression: Expression },
+    Print { expression: Expression },
+}
+
 impl Literal {
     pub fn to_string(&self) -> String {
         match self {
@@ -103,8 +108,6 @@ impl Expression {
                 Literal::Boolean(l <= r)
             }
             (Literal::Text(l), TokenType::Plus, Literal::Text(r)) => {
-                println!("{}",l);
-                println!("{}",r);
                 Literal::Text(format!("{}{}", l, r))
             }
             (_, TokenType::EqualEqual, _) => {
@@ -154,8 +157,52 @@ impl Parser {
         Self { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> Expression {
+    pub fn parse_expression(&mut self) -> Expression {
         self.expression()
+    }
+
+    pub fn parse(&mut self) -> Vec<Statement> {
+        let mut statements: Vec<Statement> = vec![];
+
+        while !self.is_at_end() {
+            statements.push(self.statement());
+        }
+
+        statements
+    }
+
+    fn statement(&mut self) -> Statement {
+        if self.match_any(&[TokenType::Print]) {
+            return self.print_statement();
+        }
+
+        self.expression_statement()
+    }
+
+    fn print_statement(&mut self) -> Statement {
+        let expression = self.expression();
+
+        self.consume(
+            &TokenType::Semicolon,
+            "Expect ';' after expression.".to_string(),
+        );
+
+        Statement::Print {
+            expression: (expression),
+        }
+    }
+
+    fn expression_statement(&mut self) -> Statement {
+        let expression = self.expression();
+
+        self.consume(
+            &TokenType::Semicolon,
+            "Expect ';' after expression.".to_string(),
+        );
+
+        Statement::Expression {
+            expression: (expression),
+        }
     }
 
     // expression     → ...

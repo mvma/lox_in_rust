@@ -35,7 +35,7 @@ fn run(s: &str) {
     let tokens = scanner.scan_tokens();
 
     let mut parser = Parser::new(tokens.to_vec());
-    parser.parse().evaluate_and_print();
+    parser.parse_expression().evaluate_and_print();
 }
 
 fn run_prompt() {
@@ -74,7 +74,7 @@ mod tests {
         ];
 
         let mut parser = Parser::new(tokens);
-        let expression = parser.parse();
+        let expression = parser.parse_expression();
 
         assert_eq!(expression.to_custom_string(), "(+ 2 2)");
     }
@@ -93,7 +93,7 @@ mod tests {
         ];
 
         let mut parser = Parser::new(tokens);
-        let expression = parser.parse();
+        let expression = parser.parse_expression();
 
         assert_eq!(expression.to_custom_string(), "(+ 1 (* 2 3))");
     }
@@ -114,7 +114,7 @@ mod tests {
         ];
 
         let mut parser = Parser::new(tokens);
-        let expression = parser.parse();
+        let expression = parser.parse_expression();
 
         assert_eq!(expression.to_custom_string(), "(* (group (+ 1 2)) 3)");
     }
@@ -135,7 +135,7 @@ mod tests {
         ];
 
         let mut parser = Parser::new(tokens);
-        parser.parse();
+        parser.parse_expression();
     }
 
     #[test]
@@ -155,13 +155,17 @@ mod tests {
     }
 
     #[test]
-    fn it_works() {
+    fn it_computes() {
         let tokens = vec![
+            Token::new(TokenType::Number, "1".to_string(), Literal::Number(1.0), 1),
+            Token::new(TokenType::Plus, "".to_string(), Literal::Nil, 1),
             Token::new(TokenType::Number, "1".to_string(), Literal::Number(1.0), 1),
             Token::new(TokenType::Eof, "".to_string(), Literal::Nil, 1),
         ];
 
         let mut parser = Parser::new(tokens);
-        parser.parse().evaluate();
+        let literal = parser.parse_expression().evaluate();
+
+        assert_eq!(literal.to_string(), "2");
     }
 }
