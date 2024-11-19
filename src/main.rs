@@ -2,6 +2,8 @@ mod scanner;
 use crate::scanner::*;
 mod parser;
 use crate::parser::*;
+mod interpreter;
+use crate::interpreter::*;
 
 use std::env;
 use std::fs;
@@ -31,11 +33,13 @@ fn run_file(s: &str) {
 
 fn run(s: &str) {
     let mut scanner = Scanner::new(s);
-
     let tokens = scanner.scan_tokens();
 
     let mut parser = Parser::new(tokens.to_vec());
-    parser.parse_expression().evaluate_and_print();
+    let statements = parser.parse();
+
+    let interpreter = Interpreter::new(statements);
+    interpreter.interpret();
 }
 
 fn run_prompt() {

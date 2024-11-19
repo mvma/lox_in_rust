@@ -1,4 +1,4 @@
-use crate::scanner::*;
+use crate::{scanner::*, Statement};
 
 #[derive(PartialEq)]
 pub enum Expression {
@@ -17,11 +17,6 @@ pub enum Expression {
     Literal {
         literal_value: Literal,
     },
-}
-
-pub enum Statement {
-    Expression { expression: Expression },
-    Print { expression: Expression },
 }
 
 impl Literal {
