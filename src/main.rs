@@ -4,6 +4,8 @@ mod parser;
 use crate::parser::*;
 mod interpreter;
 use crate::interpreter::*;
+mod environment;
+use crate::environment::*;
 
 use std::env;
 use std::fs;
@@ -38,8 +40,8 @@ fn run(s: &str) {
     let mut parser = Parser::new(tokens.to_vec());
     let statements = parser.parse();
 
-    let interpreter = Interpreter::new(statements);
-    interpreter.interpret();
+    let mut interpreter = Interpreter::new(Environment::new());
+    interpreter.interpret(statements);
 }
 
 fn run_prompt() {
@@ -168,8 +170,29 @@ mod tests {
         ];
 
         let mut parser = Parser::new(tokens);
-        let literal = parser.parse_expression().evaluate();
+        let literal = parser.parse_expression().evaluate(&Environment::new());
 
         assert_eq!(literal.to_string(), "2");
+    }
+
+    #[test]
+    fn it_computes_declaration() {
+        let tokens = vec![
+            Token::new(TokenType::Var, "var".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Identifier, "a".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Equal, "=".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Number, "1".to_string(), Literal::Number(1.0), 1),
+            Token::new(TokenType::Semicolon, ";".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Print, "print".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Identifier, "a".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Semicolon, ";".to_string(), Literal::Nil, 1),
+            Token::new(TokenType::Eof, "".to_string(), Literal::Nil, 1),
+        ];
+
+        let mut parser = Parser::new(tokens.to_vec());
+        let statements = parser.parse();
+    
+        let mut interpreter = Interpreter::new(Environment::new());
+        interpreter.interpret(statements);
     }
 }

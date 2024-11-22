@@ -1,37 +1,54 @@
-use std::str;
+use std::ptr::null;
 
-use crate::Expression;
+use crate::{
+    environment::{self, *},
+    Expression, Literal, Token,
+};
 
 pub enum Statement {
-    Expression { expression: Expression },
-    Print { expression: Expression },
+    Expression {
+        expression: Expression,
+    },
+    Print {
+        expression: Expression,
+    },
+    Var {
+        token: Token,
+        expression: Expression,
+    },
 }
 
 pub struct Interpreter {
-    statements: Vec<Statement>,
+    environment: Environment,
 }
 
 impl Interpreter {
-    pub fn new(statements: Vec<Statement>) -> Self {
+    pub fn new(environment: Environment) -> Self {
         Self {
-            statements: statements,
+            environment: environment,
         }
     }
 
-    pub fn interpret(&self) {
-        for statement in &self.statements {
+    pub fn interpret(&mut self, statements: Vec<Statement>) {
+        for statement in statements {
             self.execute(statement);
         }
     }
 
-    fn execute(&self, statement: &Statement) {
+    fn execute(&mut self, statement: Statement) {
         match statement {
             Statement::Print { expression } => {
-                let value = expression.evaluate();
+                let value = expression.evaluate(&self.environment);
                 println!("{:#?}", value.to_string());
             }
             Statement::Expression { expression } => {
-                expression.evaluate();
+                expression.evaluate(&self.environment);
+            }
+            Statement::Var { token, expression } => {
+                self.environment.set(
+                    token.lexeme().to_string(),
+                    expression.evaluate(&self.environment),
+                );
             }
         }
     }

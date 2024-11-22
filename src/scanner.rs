@@ -301,7 +301,7 @@ impl Token {
             TokenType::GreaterEqual => ">=",
             TokenType::Less => "<",
             TokenType::LessEqual => "<=",
-            _ => "",
+            _ => &self.lexeme,
         }
     }
 

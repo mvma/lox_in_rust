@@ -1,6 +1,6 @@
-use crate::{scanner::*, Statement};
+use crate::{scanner::*, Environment, Statement};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum Expression {
     Grouping {
         expression: Box<Expression>,
@@ -16,6 +16,9 @@ pub enum Expression {
     },
     Literal {
         literal_value: Literal,
+    },
+    Var {
+        name: Token,
     },
 }
 
@@ -54,24 +57,30 @@ impl Expression {
             Expression::Literal { literal_value } => {
                 format!("{}", literal_value.to_custom_string())
             }
+            Expression::Var { name } => {
+                format!("(var {})", name.lexeme())
+            }
         }
     }
 
-    pub fn evaluate_and_print(&self) {
-        let result = self.evaluate();
+    pub fn evaluate_and_print(&self, environment: &Environment) {
+        let result = self.evaluate(environment);
         println!("{}", result.to_string());
     }
 
-    pub fn evaluate(&self) -> Literal {
+    pub fn evaluate(&self, environment: &Environment) -> Literal {
         match self {
-            Expression::Grouping { expression } => expression.evaluate(),
+            Expression::Grouping { expression } => expression.evaluate(environment),
             Expression::Binary {
                 left,
                 operator,
                 right,
-            } => self.evaluate_binary(left, operator, right),
-            Expression::Unary { operator, right } => self.evaluate_unary(operator, right),
+            } => self.evaluate_binary(left, operator, right, environment),
+            Expression::Unary { operator, right } => {
+                self.evaluate_unary(operator, right, environment)
+            }
             Expression::Literal { literal_value } => literal_value.clone(),
+            Expression::Var { name } => environment.get(name.lexeme()).unwrap().clone(),
         }
     }
 
@@ -80,9 +89,10 @@ impl Expression {
         left: &Box<Expression>,
         token: &Token,
         right: &Box<Expression>,
+        environment: &Environment,
     ) -> Literal {
-        let left_expression = left.evaluate();
-        let right_expression = right.evaluate();
+        let left_expression = left.evaluate(environment);
+        let right_expression = right.evaluate(environment);
 
         match (&left_expression, token.get_token_type(), &right_expression) {
             (Literal::Number(l), TokenType::Minus, Literal::Number(r)) => Literal::Number(l - r),
@@ -120,8 +130,13 @@ impl Expression {
         }
     }
 
-    fn evaluate_unary(&self, token: &Token, expression: &Box<Expression>) -> Literal {
-        let right_expression = expression.evaluate();
+    fn evaluate_unary(
+        &self,
+        token: &Token,
+        expression: &Box<Expression>,
+        environment: &Environment,
+    ) -> Literal {
+        let right_expression = expression.evaluate(environment);
 
         match (token.get_token_type(), right_expression) {
             (TokenType::Minus, Literal::Number(value)) => return Literal::Number(-value),
@@ -160,10 +175,42 @@ impl Parser {
         let mut statements: Vec<Statement> = vec![];
 
         while !self.is_at_end() {
-            statements.push(self.statement());
+            statements.push(self.declaration());
         }
 
         statements
+    }
+
+    fn declaration(&mut self) -> Statement {
+        if self.match_any(&[TokenType::Var]) {
+            return self.var_declaration();
+        }
+
+        self.statement()
+    }
+
+    fn var_declaration(&mut self) -> Statement {
+        let token = self
+            .consume(&TokenType::Identifier, "Expect variable name.".to_string())
+            .clone();
+
+        let iniatilizer = if self.match_any(&[TokenType::Equal]) {
+            self.parse_expression()
+        } else {
+            Expression::Literal {
+                literal_value: Literal::Nil,
+            }
+        };
+
+        self.consume(
+            &TokenType::Semicolon,
+            "Expect ';' after expression.".to_string(),
+        );
+
+        Statement::Var {
+            token: (token),
+            expression: (iniatilizer),
+        }
     }
 
     fn statement(&mut self) -> Statement {
@@ -327,6 +374,14 @@ impl Parser {
 
             return Expression::Literal {
                 literal_value: (previous_literal),
+            };
+        }
+
+        if self.match_any(&[TokenType::Identifier]) {
+            let previous = self.previous();
+
+            return Expression::Var {
+                name: (previous.clone()),
             };
         }
 
