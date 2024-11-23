@@ -170,7 +170,9 @@ mod tests {
         ];
 
         let mut parser = Parser::new(tokens);
-        let literal = parser.parse_expression().evaluate(&Environment::new());
+        let mut environment = Environment::new();
+
+        let literal = parser.parse_expression().evaluate(&mut environment);
 
         assert_eq!(literal.to_string(), "2");
     }
@@ -191,8 +193,8 @@ mod tests {
 
         let mut parser = Parser::new(tokens.to_vec());
         let statements = parser.parse();
-    
-        let mut interpreter = Interpreter::new(Environment::new());
+        let environment = Environment::new();
+        let mut interpreter = Interpreter::new(environment);
         interpreter.interpret(statements);
     }
 }

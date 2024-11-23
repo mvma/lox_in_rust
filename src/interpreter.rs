@@ -1,8 +1,7 @@
-use std::ptr::null;
 
 use crate::{
-    environment::{self, *},
-    Expression, Literal, Token,
+    environment::{*},
+    Expression, Token,
 };
 
 pub enum Statement {
@@ -38,17 +37,16 @@ impl Interpreter {
     fn execute(&mut self, statement: Statement) {
         match statement {
             Statement::Print { expression } => {
-                let value = expression.evaluate(&self.environment);
+                let value = expression.evaluate(&mut self.environment);
                 println!("{:#?}", value.to_string());
             }
             Statement::Expression { expression } => {
-                expression.evaluate(&self.environment);
+                expression.evaluate(&mut self.environment);
             }
             Statement::Var { token, expression } => {
-                self.environment.set(
-                    token.lexeme().to_string(),
-                    expression.evaluate(&self.environment),
-                );
+                let value = expression.evaluate(&mut self.environment);
+
+                self.environment.set(token.lexeme().to_string(), value);
             }
         }
     }

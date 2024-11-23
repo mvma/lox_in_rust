@@ -20,6 +20,10 @@ pub enum Expression {
     Var {
         name: Token,
     },
+    Assignment {
+        name: Token,
+        value: Box<Expression>,
+    },
 }
 
 impl Literal {
@@ -60,15 +64,18 @@ impl Expression {
             Expression::Var { name } => {
                 format!("(var {})", name.lexeme())
             }
+            Expression::Assignment { name, value } => {
+                format!("{}={}", name.lexeme(), value.to_custom_string())
+            }
         }
     }
 
-    pub fn evaluate_and_print(&self, environment: &Environment) {
+    pub fn evaluate_and_print(&self, environment: &mut Environment) {
         let result = self.evaluate(environment);
         println!("{}", result.to_string());
     }
 
-    pub fn evaluate(&self, environment: &Environment) -> Literal {
+    pub fn evaluate(&self, environment: &mut Environment) -> Literal {
         match self {
             Expression::Grouping { expression } => expression.evaluate(environment),
             Expression::Binary {
@@ -80,7 +87,25 @@ impl Expression {
                 self.evaluate_unary(operator, right, environment)
             }
             Expression::Literal { literal_value } => literal_value.clone(),
-            Expression::Var { name } => environment.get(name.lexeme()).unwrap().clone(),
+            Expression::Var { name } => {
+                let value = environment.get(name.lexeme());
+                if value.is_some() {
+                    return value.unwrap().clone();
+                }
+                return Literal::Nil;
+            }
+            Expression::Assignment { name, value } => {
+                let previous_value = environment.get(name.lexeme());
+
+                if previous_value.is_some() {
+                    let new_value = value.evaluate(environment);
+                    environment.set(name.lexeme().to_string(), new_value.clone());
+
+                    return new_value;
+                } else {
+                    panic!("Variable {} has not been defined.", name.lexeme());
+                }
+            }
         }
     }
 
@@ -89,7 +114,7 @@ impl Expression {
         left: &Box<Expression>,
         token: &Token,
         right: &Box<Expression>,
-        environment: &Environment,
+        environment: &mut Environment,
     ) -> Literal {
         let left_expression = left.evaluate(environment);
         let right_expression = right.evaluate(environment);
@@ -134,7 +159,7 @@ impl Expression {
         &self,
         token: &Token,
         expression: &Box<Expression>,
-        environment: &Environment,
+        environment: &mut Environment,
     ) -> Literal {
         let right_expression = expression.evaluate(environment);
 
@@ -255,7 +280,27 @@ impl Parser {
     // unary          → ...
     // primary        → ...
     fn expression(&mut self) -> Expression {
-        self.equality()
+        self.assignment()
+    }
+
+    fn assignment(&mut self) -> Expression {
+        let expression = self.equality();
+
+        if self.match_any(&[TokenType::Equal]) {
+            let value = self.assignment();
+
+            match expression {
+                Expression::Var { name } => {
+                    return Expression::Assignment {
+                        name: (name),
+                        value: (Box::from(value)),
+                    }
+                }
+                _ => panic!("Invalid assignment target."),
+            }
+        }
+
+        expression
     }
 
     fn equality(&mut self) -> Expression {
