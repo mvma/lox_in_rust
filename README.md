@@ -1,22 +1,28 @@
-# Rlox - A Minimalistic Interpreter
+# Rlox - A Minimalistic Interpreter  
 
-Rlox is a minimal interpreter inspired by the Lox programming language. It supports a basic set of features including arithmetic expressions, conditionals, loops, and user-defined variables.
+Rlox is a personal project designed as a learning exercise, inspired by the Lox programming language. It supports a basic set of features such as arithmetic expressions, conditionals, loops, and user-defined variables.  
 
-## Key Features
+This project **does not aim to teach**, serve as a reference, or inspire others. It prioritizes progress and exploration over strict adherence to best practices or complete feature purity.  
 
-- **Tokenizer**: Converts source code into meaningful tokens.
-- **Arithmetic Operations**: Supports basic arithmetic (`+`, `-`, `*`, `/`).
-- **Control Flow**: Includes support for keywords like `if`, `else`, `for`, `while`, `var`, and more.
-- **Parser**: A simple parser that converts tokens into an Abstract Syntax Tree (AST).
-- **Data Types**: Supports `strings` and `numbers`.
-- **Execution**: Can execute both source code files and interactive prompts.
+## Key Features  
 
-## How It Works
+- **Tokenizer**: Converts source code into meaningful tokens.  
+- **Arithmetic Operations**: Supports basic arithmetic (`+`, `-`, `*`, `/`).  
+- **Control Flow**: Includes keywords like `if`, `else`, `for`, `while`, `var`, and more.  
+- **Parser**: A simple parser that transforms tokens into an Abstract Syntax Tree (AST).  
+- **Data Types**: Handles `strings` and `numbers`.  
+- **Execution**: Runs both source code files and interactive prompts.  
 
-1. **Tokenization**: The interpreter scans the source code and breaks it down into tokens (e.g., operators, variables, keywords).
-2. **Parsing**: Tokens are then parsed to produce an Abstract Syntax Tree (AST).
-3. **Evaluation**: The AST is evaluated to execute the code and produce the result.
+## How It Works  
 
-## Limitations
+1. **Tokenization**: Scans source code to break it into tokens (e.g., operators, variables, keywords).  
+2. **Parsing**: Produces an Abstract Syntax Tree (AST) from the tokens.  
+3. **Evaluation**: Executes the AST to run the code and produce results.  
 
-- **ASCII Only**: Currently, the interpreter only supports ASCII characters. Any source code containing non-ASCII characters will result in an error. This limitation is intentional and part of the current scope for development.
+## Purpose and Limitations  
+
+Rlox is **not** intended for production use, teaching others, or as a model implementation. It is a playground for learning and improving my understanding of interpreters and programming language concepts.  
+
+### Current Limitations  
+
+- **ASCII Only**: Rlox supports only ASCII characters; non-ASCII characters will result in errors. This constraint reflects the project’s current scope and priorities.  
