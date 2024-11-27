@@ -42,11 +42,11 @@ pub struct Scanner<'a> {
 }
 
 fn is_alpha(s: &str) -> bool {
-    (s >= "a" && s <= "z") || (s >= "A" && s <= "Z") || s == "_"
+    ("a"..="z").contains(&s)
 }
 
 fn is_digit(s: &str) -> bool {
-    s >= "0" && s <= "9"
+    ("0"..="9").contains(&s)
 }
 
 fn is_alpha_numeric(s: &str) -> bool {
@@ -78,7 +78,7 @@ impl<'a> Scanner<'a> {
             self.line,
         ));
 
-        return &self.tokens;
+        &self.tokens
     }
 
     fn scan_token(&mut self) {
@@ -141,10 +141,9 @@ impl<'a> Scanner<'a> {
                     self.add_token(TokenType::Slash, Literal::Nil);
                 }
             }
-            " " => return,
+            " " => (),
             "\r" | "\t" | "\n" => {
                 self.line += 1;
-                return;
             }
             "\"" => {
                 self.string();
@@ -162,12 +161,12 @@ impl<'a> Scanner<'a> {
     }
 
     fn is_at_end(&self) -> bool {
-        return self.current >= self.source.len();
+        self.current >= self.source.len()
     }
 
     fn advance(&mut self) -> &str {
         self.current += 1;
-        return &self.source[self.current - 1..self.current];
+        &self.source[self.current - 1..self.current]
     }
 
     fn add_token(&mut self, token_type: TokenType, literal: Literal) {
@@ -191,7 +190,7 @@ impl<'a> Scanner<'a> {
 
         self.current += 1;
 
-        return true;
+        true
     }
 
     fn peek(&self) -> &str {

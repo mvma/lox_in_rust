@@ -17,18 +17,22 @@ fn main() {
 
     let args: Vec<String> = env::args().collect();
 
-    if args.len() > TOTAL_ARGS_EXPECTED {
-        println!("Usage rlox [script]!");
-        process::exit(64);
-    } else if args.len() == TOTAL_ARGS_EXPECTED {
-        run_file(&args[1]);
-    } else {
-        run_prompt();
+    match args.len().cmp(&TOTAL_ARGS_EXPECTED) {
+        std::cmp::Ordering::Greater => {
+            println!("Usage: rlox [script]!");
+            process::exit(64);
+        }
+        std::cmp::Ordering::Equal => {
+            run_file(&args[1]);
+        }
+        std::cmp::Ordering::Less => {
+            run_prompt();
+        }
     }
 }
 
 fn run_file(s: &str) {
-    let file_content = fs::read_to_string(&s).expect("Could not read the file");
+    let file_content = fs::read_to_string(s).expect("Could not read the file");
 
     run(&file_content);
 }
@@ -60,7 +64,7 @@ fn run_prompt() {
             break;
         }
 
-        run(&line);
+        run(line);
     }
 }
 

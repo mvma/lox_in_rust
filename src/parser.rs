@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::{scanner::*, Environment, Statement};
 
 #[derive(PartialEq, Clone)]
@@ -26,18 +28,19 @@ pub enum Expression {
     },
 }
 
-impl Literal {
-    pub fn to_string(&self) -> String {
+impl fmt::Display for Literal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Literal::Number(value) => format!("{}", value),
-            Literal::Boolean(value) => format!("{}", value),
-            Literal::Text(value) => value.clone(),
-            Literal::Nil => "nil".to_string(),
+            Literal::Number(value) => write!(f, "{}", value),
+            Literal::Boolean(value) => write!(f, "{}", value),
+            Literal::Text(value) => write!(f, "{}", value),
+            Literal::Nil => write!(f, "nil"),
         }
     }
 }
 
 impl Expression {
+    #[cfg(test)]
     pub fn to_custom_string(&self) -> String {
         match self {
             Expression::Grouping { expression } => {
@@ -70,11 +73,7 @@ impl Expression {
         }
     }
 
-    pub fn evaluate_and_print(&self, environment: &mut Environment) {
-        let result = self.evaluate(environment);
-        println!("{}", result.to_string());
-    }
-
+    #[allow(dead_code)]
     pub fn evaluate(&self, environment: &mut Environment) -> Literal {
         match self {
             Expression::Grouping { expression } => expression.evaluate(environment),
@@ -87,33 +86,29 @@ impl Expression {
                 self.evaluate_unary(operator, right, environment)
             }
             Expression::Literal { literal_value } => literal_value.clone(),
-            Expression::Var { name } => {
-                let value = environment.get(name.lexeme());
-                if value.is_some() {
-                    return value.unwrap().clone();
-                }
-                return Literal::Nil;
-            }
+            Expression::Var { name } => match environment.get(name.lexeme()) {
+                Some(value) => value.clone(),
+                _ => Literal::Nil,
+            },
             Expression::Assignment { name, value } => {
-                let previous_value = environment.get(name.lexeme());
+                let new_value = value.evaluate(environment);
 
-                if previous_value.is_some() {
-                    let new_value = value.evaluate(environment);
-                    environment.set(name.lexeme().to_string(), new_value.clone());
+                let result = environment.define(name.lexeme(), new_value.clone());
 
+                if result {
                     return new_value;
-                } else {
-                    panic!("Variable {} has not been defined.", name.lexeme());
                 }
+
+                panic!("Variable {} has not been defined.", name.lexeme());
             }
         }
     }
 
     fn evaluate_binary(
         &self,
-        left: &Box<Expression>,
+        left: &Expression,
         token: &Token,
-        right: &Box<Expression>,
+        right: &Expression,
         environment: &mut Environment,
     ) -> Literal {
         let left_expression = left.evaluate(environment);
@@ -158,13 +153,13 @@ impl Expression {
     fn evaluate_unary(
         &self,
         token: &Token,
-        expression: &Box<Expression>,
+        expression: &Expression,
         environment: &mut Environment,
     ) -> Literal {
         let right_expression = expression.evaluate(environment);
 
         match (token.get_token_type(), right_expression) {
-            (TokenType::Minus, Literal::Number(value)) => return Literal::Number(-value),
+            (TokenType::Minus, Literal::Number(value)) => Literal::Number(-value),
             _ => todo!(),
         }
     }
@@ -392,7 +387,7 @@ impl Parser {
             };
         }
 
-        return self.primary();
+        self.primary()
     }
 
     fn primary(&mut self) -> Expression {
@@ -454,7 +449,7 @@ impl Parser {
             }
         }
 
-        return false;
+        false
     }
 
     fn check(&self, token_type: &TokenType) -> bool {
@@ -464,7 +459,7 @@ impl Parser {
 
         let current = self.peek();
 
-        return current.type_equals_to(token_type);
+        current.type_equals_to(token_type)
     }
 
     fn advance(&mut self) -> &Token {
@@ -491,7 +486,7 @@ impl Parser {
 
     fn consume(&mut self, token_type: &TokenType, message: String) -> &Token {
         if self.check(token_type) {
-            return &self.advance();
+            return self.advance();
         }
         panic!("{}", message);
     }

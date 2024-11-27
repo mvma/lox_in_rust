@@ -24,7 +24,7 @@ pub struct Interpreter {
 impl Interpreter {
     pub fn new(environment: Environment) -> Self {
         Self {
-            environment: environment,
+            environment,
         }
     }
 
@@ -46,7 +46,7 @@ impl Interpreter {
             Statement::Var { token, expression } => {
                 let value = expression.evaluate(&mut self.environment);
 
-                self.environment.set(token.lexeme().to_string(), value);
+                self.environment.define(token.lexeme(), value);
             }
         }
     }
