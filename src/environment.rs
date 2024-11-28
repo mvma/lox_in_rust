@@ -25,7 +25,11 @@ impl Environment {
         }
     }
 
-    pub fn define(&mut self, variable_name: &str, value: Literal) -> bool {
+    pub fn define(&mut self, variable_name: &str, value: Literal) {
+        self.variables.insert(variable_name.to_string(), value);
+    }
+
+    pub fn assign(&mut self, variable_name: &str, value: Literal) -> bool {
         let previous_value = self.variables.get(variable_name);
 
         match (previous_value, &mut self.enclosing) {
@@ -34,7 +38,7 @@ impl Environment {
 
                 true
             }
-            (None, Some(next)) => next.define(variable_name, value),
+            (None, Some(next)) => next.assign(variable_name, value),
             (None, None) => false,
         }
     }

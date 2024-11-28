@@ -93,7 +93,7 @@ impl Expression {
             Expression::Assignment { name, value } => {
                 let new_value = value.evaluate(environment);
 
-                let result = environment.define(name.lexeme(), new_value.clone());
+                let result = environment.assign(name.lexeme(), new_value.clone());
 
                 if result {
                     return new_value;
