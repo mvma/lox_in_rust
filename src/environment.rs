@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::Literal;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone)]
 pub struct Environment {
     variables: HashMap<String, Literal>,
     enclosing: Option<Box<Environment>>,
