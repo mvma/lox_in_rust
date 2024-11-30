@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use crate::Literal;
 
+#[derive(Clone, PartialEq, Debug)]
 pub struct Environment {
     variables: HashMap<String, Literal>,
     enclosing: Option<Box<Environment>>,
@@ -15,12 +16,19 @@ impl Environment {
         }
     }
 
+    pub fn new_with_enclosing(environment: Option<Box<Environment>>) -> Self {
+        Self {
+            variables: HashMap::new(),
+            enclosing: environment,
+        }
+    }
+
     pub fn get(&self, variable_name: &str) -> Option<&Literal> {
         let value = self.variables.get(variable_name);
 
         match (value, &self.enclosing) {
             (Some(value), _) => Some(value),
-            (None, Some(environment)) => environment.get(variable_name),
+            (None, Some(enclosing)) => enclosing.get(variable_name),
             _ => panic!("Undefined variable '{}'.", variable_name),
         }
     }

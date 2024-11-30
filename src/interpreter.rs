@@ -1,8 +1,6 @@
+use std::borrow::BorrowMut;
 
-use crate::{
-    environment::{*},
-    Expression, Token,
-};
+use crate::{environment::*, Expression, Token};
 
 pub enum Statement {
     Expression {
@@ -15,6 +13,9 @@ pub enum Statement {
         token: Token,
         expression: Expression,
     },
+    Block {
+        statements: Vec<Statement>,
+    },
 }
 
 pub struct Interpreter {
@@ -23,9 +24,7 @@ pub struct Interpreter {
 
 impl Interpreter {
     pub fn new(environment: Environment) -> Self {
-        Self {
-            environment,
-        }
+        Self { environment }
     }
 
     pub fn interpret(&mut self, statements: Vec<Statement>) {
@@ -47,6 +46,16 @@ impl Interpreter {
                 let value = expression.evaluate(&mut self.environment);
 
                 self.environment.define(token.lexeme(), value);
+            }
+            Statement::Block { statements } => {
+                let previous = self.environment.borrow_mut().clone();
+
+                let current =
+                    Environment::new_with_enclosing(Some(Box::new(self.environment.clone())));
+
+                self.environment = current;
+                self.interpret(statements);
+                self.environment = previous;
             }
         }
     }

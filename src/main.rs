@@ -182,23 +182,23 @@ mod tests {
     }
 
     #[test]
-    fn it_computes_declaration() {
-        let tokens = vec![
-            Token::new(TokenType::Var, "var".to_string(), Literal::Nil, 1),
-            Token::new(TokenType::Identifier, "a".to_string(), Literal::Nil, 1),
-            Token::new(TokenType::Equal, "=".to_string(), Literal::Nil, 1),
-            Token::new(TokenType::Number, "1".to_string(), Literal::Number(1.0), 1),
-            Token::new(TokenType::Semicolon, ";".to_string(), Literal::Nil, 1),
-            Token::new(TokenType::Print, "print".to_string(), Literal::Nil, 1),
-            Token::new(TokenType::Identifier, "a".to_string(), Literal::Nil, 1),
-            Token::new(TokenType::Semicolon, ";".to_string(), Literal::Nil, 1),
-            Token::new(TokenType::Eof, "".to_string(), Literal::Nil, 1),
-        ];
+    fn it_manages_environments() {
+        let mut current_environment = Environment::new();
+        current_environment.define("i", Literal::Number(1.0));
+        current_environment.define("j", Literal::Number(2.0));
 
-        let mut parser = Parser::new(tokens.to_vec());
-        let statements = parser.parse();
-        let environment = Environment::new();
-        let mut interpreter = Interpreter::new(environment);
-        interpreter.interpret(statements);
+        let mut inner = Environment::new_with_enclosing(Some(Box::from(current_environment)));
+        inner.define("i", Literal::Number(2.0));
+
+        let mut inner_most = Environment::new_with_enclosing(Some(Box::from(inner)));
+        inner_most.define("k", Literal::Text("John".to_string()));
+
+        let variable_i = inner_most.get("i");
+        let variable_j = inner_most.get("j");
+        let variable_k = inner_most.get("k");
+
+        assert_eq!(variable_i.unwrap(), &Literal::Number(2.0));
+        assert_eq!(variable_j.unwrap(), &Literal::Number(2.0));
+        assert_eq!(variable_k.unwrap(), &Literal::Text("John".to_string()));
     }
 }

@@ -238,6 +238,10 @@ impl Parser {
             return self.print_statement();
         }
 
+        if self.match_any(&[TokenType::LeftBrace]) {
+            return self.block_statement();
+        }
+
         self.expression_statement()
     }
 
@@ -251,6 +255,23 @@ impl Parser {
 
         Statement::Print {
             expression: (expression),
+        }
+    }
+
+    fn block_statement(&mut self) -> Statement {
+        let mut statements = Vec::new();
+
+        while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
+            statements.push(self.declaration());
+        }
+
+        self.consume(
+            &TokenType::RightBrace,
+            "Expect '}' after block.".to_string(),
+        );
+
+        Statement::Block {
+            statements: (statements),
         }
     }
 
