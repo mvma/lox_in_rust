@@ -26,6 +26,11 @@ pub enum Expression {
         name: Token,
         value: Box<Expression>,
     },
+    Logical {
+        left: Box<Expression>,
+        operator: Token,
+        right: Box<Expression>,
+    },
 }
 
 impl fmt::Display for Literal {
@@ -70,6 +75,18 @@ impl Expression {
             Expression::Assignment { name, value } => {
                 format!("{}={}", name.lexeme(), value.to_custom_string())
             }
+            Expression::Logical {
+                left,
+                operator,
+                right,
+            } => {
+                format!(
+                    "({} {} {})",
+                    operator.lexeme(),
+                    left.to_custom_string(),
+                    right.to_custom_string()
+                )
+            }
         }
     }
 
@@ -100,6 +117,29 @@ impl Expression {
                 }
 
                 panic!("Variable {} has not been defined.", name.lexeme());
+            }
+            Expression::Logical {
+                left,
+                operator,
+                right,
+            } => {
+                let left_value = left.evaluate(environment);
+
+                match operator.get_token_type() {
+                    TokenType::Or => {
+                        if left_value == Literal::Boolean(true) {
+                            return left_value;
+                        }
+                    }
+                    TokenType::And => {
+                        if left_value == Literal::Boolean(false) {
+                            return left_value;
+                        }
+                    }
+                    _ => (),
+                }
+
+                right.evaluate(environment)
             }
         }
     }
@@ -330,7 +370,7 @@ impl Parser {
     }
 
     fn assignment(&mut self) -> Expression {
-        let expression = self.equality();
+        let expression = self.or();
 
         if self.match_any(&[TokenType::Equal]) {
             let value = self.assignment();
@@ -347,6 +387,42 @@ impl Parser {
         }
 
         expression
+    }
+
+    fn or(&mut self) -> Expression {
+        let mut expr = self.and();
+
+        while self.match_any(&[TokenType::Or]) {
+            let operator = self.previous().clone();
+
+            let right_expression = self.and();
+
+            expr = Expression::Logical {
+                left: (Box::from(expr)),
+                operator: operator.clone(),
+                right: (Box::from(right_expression)),
+            };
+        }
+
+        expr
+    }
+
+    fn and(&mut self) -> Expression {
+        let mut expr = self.equality();
+
+        while self.match_any(&[TokenType::And]) {
+            let operator = self.previous().clone();
+
+            let right_expression = self.equality();
+
+            expr = Expression::Logical {
+                left: (Box::from(expr)),
+                operator: operator.clone(),
+                right: (Box::from(right_expression)),
+            };
+        }
+
+        expr
     }
 
     fn equality(&mut self) -> Expression {
