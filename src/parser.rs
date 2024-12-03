@@ -234,6 +234,10 @@ impl Parser {
     }
 
     fn statement(&mut self) -> Statement {
+        if self.match_any(&[TokenType::If]) {
+            return self.if_statement();
+        }
+
         if self.match_any(&[TokenType::Print]) {
             return self.print_statement();
         }
@@ -243,6 +247,32 @@ impl Parser {
         }
 
         self.expression_statement()
+    }
+
+    fn if_statement(&mut self) -> Statement {
+        self.consume(&TokenType::LeftParen, "Expect '(' after 'if'.".to_string());
+
+        let condition = self.expression();
+
+        self.consume(
+            &TokenType::RightParen,
+            "Expect ')' after if condition.".to_string(),
+        );
+
+        let then = self.statement();
+
+        if self.match_any(&[TokenType::Else]) {
+            Statement::IfElse {
+                condition,
+                then_statement: (Box::from(then)),
+                else_stament: (Box::from(self.statement())),
+            }
+        } else {
+            Statement::If {
+                condition,
+                then_statement: (Box::from(then)),
+            }
+        }
     }
 
     fn print_statement(&mut self) -> Statement {

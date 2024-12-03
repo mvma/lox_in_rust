@@ -1,6 +1,6 @@
 use std::borrow::BorrowMut;
 
-use crate::{environment::*, Expression, Token};
+use crate::{environment::*, Expression, Literal, Token};
 
 pub enum Statement {
     Expression {
@@ -15,6 +15,15 @@ pub enum Statement {
     },
     Block {
         statements: Vec<Statement>,
+    },
+    If {
+        condition: Expression,
+        then_statement: Box<Statement>,
+    },
+    IfElse {
+        condition: Expression,
+        then_statement: Box<Statement>,
+        else_stament: Box<Statement>,
     },
 }
 
@@ -56,6 +65,30 @@ impl Interpreter {
                 self.environment = current;
                 self.interpret(statements);
                 self.environment = previous;
+            }
+            Statement::If {
+                condition,
+                then_statement,
+            } => {
+                let result = condition.evaluate(&mut self.environment);
+
+                if result == Literal::Boolean(true) {
+                    self.execute(*then_statement);
+                }
+            }
+            Statement::IfElse {
+                condition,
+                then_statement,
+                else_stament,
+            } => {
+                let result = condition.evaluate(&mut self.environment);
+
+                match result {
+                    Literal::Boolean(true) => self.execute(*then_statement),
+                    _ => {
+                        self.execute(*else_stament);
+                    }
+                }
             }
         }
     }
